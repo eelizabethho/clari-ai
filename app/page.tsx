@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import BlurText from "@/components/BlurText";
+import BlurText from "@/components/features/BlurText";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
