@@ -1,4 +1,5 @@
 # Clari AI
+![CI](https://github.com/<your-username>/<repo>/actions/workflows/main.yml/badge.svg)
 
 An intelligent interview companion that helps you practice, reflect, and improve through real-time feedback.
 
