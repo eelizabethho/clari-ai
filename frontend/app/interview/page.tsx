@@ -1,16 +1,25 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import AudioDropzone from "@/components/ui/DropBox";
 import Link from "next/link";
 
 export default function InterviewPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect to sign-in if user isn't authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin?callbackUrl=/interview");
+    }
+  }, [status, router]);
 
   const handleFileSelect = useCallback((selectedFile: File) => {
     if (!selectedFile || !(selectedFile instanceof File)) {
@@ -45,9 +54,7 @@ export default function InterviewPage() {
       if (response.ok && data.success) {
         setUploadedUrl(data.url);
         
-        // Redirect to transcript page after successful upload
-        // Lambda will process the file and save transcript to S3
-        // The transcript page will poll for it
+        // Redirect to transcript page - Lambda will process the file in the background
         const fileName = data.fileName || file.name;
         router.push(`/interview/transcript?fileName=${encodeURIComponent(fileName)}`);
       } else {
@@ -58,6 +65,19 @@ export default function InterviewPage() {
     } finally {
       setIsUploading(false);
     }
+  }
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            {status === "loading" ? "Loading..." : "Redirecting to sign in..."}
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -74,7 +94,7 @@ export default function InterviewPage() {
           <div className="mt-4 p-4 bg-green-50 border-2 border-green-400 rounded-md">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-semibold text-green-800">
-                ✅ File Ready to Upload
+                File Ready to Upload
               </p>
               <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">
                 Ready
@@ -108,7 +128,7 @@ export default function InterviewPage() {
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
               <div>
-                <p className="text-sm font-semibold text-blue-800">Uploading to S3...</p>
+                <p className="text-sm font-semibold text-blue-800">Uploading your file...</p>
                 <p className="text-xs text-blue-600 mt-1">Please wait, this may take a moment</p>
               </div>
             </div>
@@ -118,25 +138,13 @@ export default function InterviewPage() {
         {uploadedUrl && !isUploading && (
           <div className="mt-4 p-4 bg-green-50 border-2 border-green-400 rounded-md">
             <div className="flex items-start gap-3">
-              <div className="text-2xl">✅</div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-green-800 mb-2">
-                  🎉 Successfully Uploaded to S3!
+                  File uploaded successfully
                 </p>
                 <p className="text-xs text-green-700 mb-2">
-                  Your file is now stored in your S3 bucket
+                  Your file is being processed. Redirecting to transcript...
                 </p>
-                <div className="bg-white p-2 rounded border border-green-200 mt-2">
-                  <p className="text-xs font-mono text-green-800 break-all">
-                    {uploadedUrl}
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(uploadedUrl)}
-                  className="mt-2 text-xs text-green-700 hover:text-green-900 underline"
-                >
-                  Copy URL
-                </button>
               </div>
             </div>
           </div>
@@ -144,16 +152,16 @@ export default function InterviewPage() {
 
         {error && (
           <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-md">
-            <p className="text-sm">❌ {error}</p>
+            <p className="text-sm">{error}</p>
           </div>
         )}
 
         <div className="mt-6 flex justify-between">
           <Link
-            href="/"
+            href="/interview/history"
             className="text-sm text-gray-500 hover:underline"
           >
-            ← Back
+            View Past Transcripts
           </Link>
 
           <button

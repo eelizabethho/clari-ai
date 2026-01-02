@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { uploadFileToS3 } from "@/services/upload.service";
+import { getServerSession } from "next-auth";
 
 export async function POST(request) {
   try {
+    const session = await getServerSession();
+    
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("audio");
 
@@ -13,7 +23,9 @@ export async function POST(request) {
       );
     }
     
-    const result = await uploadFileToS3(file);
+    // Associate file with user for history tracking
+    const userId = session.user.id || session.user.email;
+    const result = await uploadFileToS3(file, userId);
     
     if (result.success) {
       return NextResponse.json({

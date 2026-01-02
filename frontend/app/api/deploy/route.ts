@@ -11,12 +11,10 @@ import { NextResponse } from "next/server";
 const STACK_NAME = "clari-ai-lambda-stack";
 const REGION = process.env.AWS_REGION || "us-east-1";
 
-// Package Lambda code into a zip file
 async function packageLambdaCode(): Promise<string> {
   const lambdaDir = join(process.cwd(), "..", "infra", "lambda");
   const zipPath = join(process.cwd(), ".next", "lambda-deployment.zip");
   
-  // Ensure .next directory exists
   const nextDir = join(process.cwd(), ".next");
   try {
     execSync(`mkdir -p "${nextDir}"`, { stdio: 'ignore' });
@@ -36,7 +34,6 @@ async function packageLambdaCode(): Promise<string> {
     archive.on("error", (err: Error) => reject(err));
     archive.pipe(output);
 
-    // Add all files from lambda directory
     try {
       const files = readdirSync(lambdaDir);
       files.forEach((file) => {
@@ -120,7 +117,6 @@ export async function POST() {
 
   const cfClient = new CloudFormationClient({ region: REGION });
 
-  // Get template file path
   const templatePath = join(process.cwd(), "lib/aws/infra/lambda-stack.yaml");
   let templateBody: string;
 

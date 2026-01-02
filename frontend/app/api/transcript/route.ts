@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/aws/s3Client";
 
+// Format AWS Transcribe items array into readable transcript with speaker labels
+// Converts spk_0, spk_1 to "Speaker 1", "Speaker 2", etc.
 function formatTranscriptWithSpeakers(items: any[]): string {
   if (!items || items.length === 0) return "";
   
@@ -16,6 +18,7 @@ function formatTranscriptWithSpeakers(items: any[]): string {
     
     if (!content && itemType !== "punctuation") continue;
     
+    // New speaker detected - start a new paragraph
     if (speakerLabel && speakerLabel !== currentSpeaker) {
       if (currentSentence.trim()) {
         formatted += currentSentence.trim();
@@ -32,6 +35,7 @@ function formatTranscriptWithSpeakers(items: any[]): string {
       currentSpeaker = speakerLabel;
     }
     
+    // Build sentence word by word
     if (itemType === "punctuation") {
       currentSentence += content;
     } else {
@@ -41,6 +45,7 @@ function formatTranscriptWithSpeakers(items: any[]): string {
       currentSentence += content;
     }
     
+    // End of sentence - flush to formatted text
     if (content.match(/[.!?]$/)) {
       formatted += currentSentence.trim();
       currentSentence = "";
@@ -77,6 +82,7 @@ export async function GET(request: Request) {
       const response = await s3Client.send(command);
       const transcriptData = JSON.parse(await response.Body!.transformToString());
       
+      // Format with speaker labels if available, otherwise use plain transcript
       let formattedTranscript = transcriptData.transcript;
       if (transcriptData.items && transcriptData.items.length > 0) {
         formattedTranscript = formatTranscriptWithSpeakers(transcriptData.items);
@@ -85,13 +91,14 @@ export async function GET(request: Request) {
       return NextResponse.json({
         success: true,
         transcript: formattedTranscript,
-        rawTranscript: transcriptData.transcript,
+        rawTranscript: transcriptData.transcript, // Keep original for AI analysis
         speakers: transcriptData.speakers,
         items: transcriptData.items,
         fileName: transcriptData.fileName,
         timestamp: transcriptData.timestamp,
       });
     } catch (s3Error: any) {
+      // File doesn't exist yet - Lambda is still processing
       if (s3Error.name === "NoSuchKey" || s3Error.Code === "NoSuchKey") {
         return NextResponse.json({
           success: false,

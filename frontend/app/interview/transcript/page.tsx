@@ -17,6 +17,7 @@ export default function TranscriptPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
+  // Send transcript to AI for performance analysis
   const analyzeTranscript = async (transcriptText: string) => {
     setIsAnalyzing(true);
     try {
@@ -42,12 +43,14 @@ export default function TranscriptPage() {
     }
   };
 
+  // Color coding for scores: green (8+), yellow (6-7), red (<6)
   const getScoreColor = (score: number) => {
     if (score >= 8) return 'text-green-600 bg-green-100';
     if (score >= 6) return 'text-yellow-600 bg-yellow-100';
     return 'text-red-600 bg-red-100';
   };
 
+  // Convert numeric score to readable label
   const getScoreLabel = (score: number) => {
     if (score >= 9) return 'Excellent';
     if (score >= 8) return 'Very Good';
@@ -63,7 +66,7 @@ export default function TranscriptPage() {
       return;
     }
 
-    // Poll for transcript every 3 seconds
+    // Poll for transcript since Lambda processes files asynchronously
     const pollInterval = setInterval(async () => {
       try {
         const response = await fetch(`/api/transcript?fileName=${encodeURIComponent(fileName)}`);
@@ -74,14 +77,14 @@ export default function TranscriptPage() {
           setSpeakers(data.speakers || 0);
           setIsLoading(false);
           clearInterval(pollInterval);
-          // Auto-analyze when transcript is ready (use raw transcript for analysis)
+          // Use raw transcript (without speaker labels) for AI analysis
           const transcriptForAnalysis = data.rawTranscript || data.transcript;
           analyzeTranscript(transcriptForAnalysis);
         } else if (data.ready === false) {
-          // Still processing
+          // Still processing, keep polling
           setPollCount((prev) => prev + 1);
           if (pollCount > 60) {
-            // Timeout after 3 minutes
+            // Timeout after 3 minutes (60 * 3 seconds)
             setError("Transcript processing is taking longer than expected. Please try again later.");
             setIsLoading(false);
             clearInterval(pollInterval);
@@ -96,9 +99,8 @@ export default function TranscriptPage() {
           clearInterval(pollInterval);
         }
       }
-    }, 3000); // Poll every 3 seconds
+    }, 3000);
 
-    // Initial fetch
     fetch(`/api/transcript?fileName=${encodeURIComponent(fileName)}`)
       .then((res) => res.json())
       .then((data) => {
@@ -107,7 +109,6 @@ export default function TranscriptPage() {
           setSpeakers(data.speakers || 0);
           setIsLoading(false);
           clearInterval(pollInterval);
-          // Auto-analyze when transcript is ready (use raw transcript for analysis)
           const transcriptForAnalysis = data.rawTranscript || data.transcript;
           analyzeTranscript(transcriptForAnalysis);
         }
@@ -161,7 +162,7 @@ export default function TranscriptPage() {
 
         {error && (
           <div className="p-4 bg-red-50 border-2 border-red-300 rounded-md">
-            <p className="text-red-800 font-medium">❌ {error}</p>
+            <p className="text-red-800 font-medium">{error}</p>
             <Link
               href="/interview"
               className="text-sm text-red-600 hover:text-red-800 underline mt-2 inline-block"
@@ -176,7 +177,7 @@ export default function TranscriptPage() {
             <div className="flex items-center justify-between p-4 bg-green-50 border-2 border-green-300 rounded-md">
               <div>
                 <p className="text-sm font-semibold text-green-800">
-                  ✅ Transcript Ready
+                  Transcript Ready
                 </p>
                 {speakers > 0 && (
                   <p className="text-xs text-green-600 mt-1">
@@ -205,15 +206,13 @@ export default function TranscriptPage() {
               </div>
             </div>
 
-            {/* Performance Dashboard */}
             {showAnalysis && analysis && (
               <div className="space-y-6">
                 <div className="border-t-2 border-gray-200 pt-6">
                   <h2 className="text-xl font-bold text-gray-800 mb-4">
-                    📊 Performance Dashboard
+                    Performance Dashboard
                   </h2>
 
-                  {/* Overall Score */}
                   {analysis.overall && (
                     <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
                       <div className="flex items-center justify-between mb-2">
@@ -228,7 +227,6 @@ export default function TranscriptPage() {
                     </div>
                   )}
 
-                  {/* Score Cards Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     {analysis.communication && (
                       <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
@@ -291,10 +289,9 @@ export default function TranscriptPage() {
                     )}
                   </div>
 
-                  {/* Strengths */}
                   {analysis.strengths && analysis.strengths.length > 0 && (
                     <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <h3 className="font-semibold text-green-800 mb-3">✅ Strengths</h3>
+                      <h3 className="font-semibold text-green-800 mb-3">Strengths</h3>
                       <ul className="list-disc list-inside space-y-1">
                         {analysis.strengths.map((strength: string, idx: number) => (
                           <li key={idx} className="text-sm text-green-700">{strength}</li>
@@ -303,10 +300,9 @@ export default function TranscriptPage() {
                     </div>
                   )}
 
-                  {/* Areas for Improvement */}
                   {analysis.improvements && analysis.improvements.length > 0 && (
                     <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h3 className="font-semibold text-yellow-800 mb-3">⚠️ Areas for Improvement</h3>
+                      <h3 className="font-semibold text-yellow-800 mb-3">Areas for Improvement</h3>
                       <ul className="list-disc list-inside space-y-1">
                         {analysis.improvements.map((improvement: string, idx: number) => (
                           <li key={idx} className="text-sm text-yellow-700">{improvement}</li>
@@ -315,10 +311,9 @@ export default function TranscriptPage() {
                     </div>
                   )}
 
-                  {/* Recommendations */}
                   {analysis.recommendations && analysis.recommendations.length > 0 && (
                     <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h3 className="font-semibold text-blue-800 mb-3">💡 Recommendations</h3>
+                      <h3 className="font-semibold text-blue-800 mb-3">Recommendations</h3>
                       <ul className="list-disc list-inside space-y-1">
                         {analysis.recommendations.map((rec: string, idx: number) => (
                           <li key={idx} className="text-sm text-blue-700">{rec}</li>
@@ -349,11 +344,12 @@ export default function TranscriptPage() {
               <div className="prose max-w-none">
                 <div className="text-gray-700 whitespace-pre-wrap leading-relaxed space-y-3">
                   {transcript.split('\n\n').map((paragraph: string, idx: number) => {
-                    // Check if paragraph starts with "Speaker X:"
+                    // Check if this paragraph has a speaker label
                     const speakerMatch = paragraph.match(/^(Speaker \d+):\s*(.*)$/);
                     if (speakerMatch) {
                       const [, speakerLabel, content] = speakerMatch;
                       const speakerNum = speakerLabel.replace('Speaker ', '');
+                      // Alternate colors for different speakers
                       const isEven = parseInt(speakerNum) % 2 === 0;
                       
                       return (
@@ -363,7 +359,7 @@ export default function TranscriptPage() {
                         </div>
                       );
                     }
-                    // Regular paragraph (no speaker label)
+                    // Regular paragraph without speaker label
                     return (
                       <p key={idx} className="text-gray-700">
                         {paragraph}

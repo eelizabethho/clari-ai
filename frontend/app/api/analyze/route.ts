@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Prompt GPT to analyze interview performance and return structured feedback
     const analysisPrompt = `You are an expert interview coach analyzing an interview transcript. Provide detailed feedback on the candidate's performance.
 
 Analyze the following transcript and provide feedback in JSON format with these categories:
@@ -86,7 +87,7 @@ Transcript:
 ${transcript}`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Using gpt-4o-mini for faster/cheaper responses, change to "gpt-4o" if you prefer
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",

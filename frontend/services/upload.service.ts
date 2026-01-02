@@ -8,7 +8,7 @@ export interface UploadResult {
   error?: string;
 }
 
-export async function uploadFileToS3(file: File): Promise<UploadResult> {
+export async function uploadFileToS3(file: File, userId?: string): Promise<UploadResult> {
   try {
     const requiredEnvVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION', 'AWS_S3_BUCKET_NAME'];
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -17,14 +17,22 @@ export async function uploadFileToS3(file: File): Promise<UploadResult> {
       throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
     }
 
+    // Generate unique filename with timestamp to avoid collisions
     const fileName = `${Date.now()}-${file.name}`;
     const buffer = Buffer.from(await file.arrayBuffer());
     
+    // Store user ID in metadata so Lambda can associate transcript with user
+    const metadata: Record<string, string> = {};
+    if (userId) {
+      metadata['user-id'] = userId;
+    }
+
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME!,
       Key: fileName,
       Body: buffer,
       ContentType: file.type,
+      Metadata: metadata,
     });
 
     await s3Client.send(command);
