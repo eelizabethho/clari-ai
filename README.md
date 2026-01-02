@@ -1,69 +1,60 @@
 # Clari AI
-![CI](https://github.com/<your-username>/<repo>/actions/workflows/main.yml/badge.svg)
 
-An intelligent interview companion that helps you practice, reflect, and improve through real-time feedback.
+Clari AI is a web app I built to help people get better at interviews by giving them real feedback on how they sound. You upload a practice interview recording, and it breaks down your performance using AI.
 
-## Project Structure
+### What it Does
 
-```
-clari-ai/
-├── frontend/          # Next.js frontend application
-│   ├── app/           # Next.js app router
-│   ├── components/    # React components
-│   ├── lib/           # Utilities and AWS clients
-│   ├── services/      # Business logic services
-│   └── public/        # Static assets
-│
-└── README.md          # This file
-```
+Clari AI lets users upload audio or video recordings of mock interviews. It transcribes the conversation, figures out who's speaking, and then gives feedback on things like clarity, confidence, and overall delivery.
 
-## Getting Started
 
-### Frontend Setup
+## Main Features
 
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-Create a `.env.local` file in the `frontend` directory with:
-```
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_REGION=us-east-1
-AWS_S3_BUCKET_NAME=your-bucket-name
-```
-
-4. Run the development server:
-```bash
-npm run dev
-```
-
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+-  **Google Login** – Sign in securely using Google
+-  **File Uploads** – Drag and drop audio or video files
+-  **Automatic Transcription** – Uses AWS Transcribe with speaker detection
+-  **AI Feedback** – GPT analyzes the transcript and gives structured feedback
+-  **Performance Dashboard** – See scores and insights in one place
+-  **Speaker Labeling** – Separates interviewer vs. interviewee
+-  **Async Processing** – Uploads process in the background so the app stays responsive
 
 ## Tech Stack
 
 ### Frontend
-- **Next.js 16** - React framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **React Dropzone** - File uploads
-- **AWS SDK** - S3 integration
+- **Next.js** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **NextAuth** (Google OAuth)
+- **React Dropzone**
+- **Framer Motion**
 
-## Features
+### Backend / Infrastructure
+- **Next.js API Routes**
+- **AWS Lambda** for background processing
+- **AWS S3** for file storage
+- **AWS DynamoDB** for transcript history
+- **AWS Transcribe** for speech-to-text
+- **AWS CloudFormation** for infrastructure
+- **OpenAI GPT-4o-mini** for feedback generation
 
-- 📤 Audio file upload to S3
-- 🎨 Modern, responsive UI
-- ⚡ Fast file processing
-- 🔒 Secure AWS integration
+### Dev Tools
+- **AWS SDK v3**
+- **Node.js 20**
+- **Archiver** for packaging Lambda code
 
-## Learn More
+## How It Works
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
+1. User uploads an interview recording
+2. File is stored in S3 with user info
+3. A Lambda function is triggered automatically
+4. AWS Transcribe processes the audio
+5. Transcript is saved and linked to the user
+6. AI analyzes the transcript and generates feedback
+7. Results show up in the dashboard
+
+## Structure Overview
+
+- **Frontend** – UI, auth, uploads, results
+- **API layer** – Handles uploads and data flow
+- **Lambda** – Background transcription logic
+- **DynamoDB** – Stores transcript metadata
+- **S3** – Stores raw audio and processed files
