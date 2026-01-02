@@ -19,8 +19,6 @@ export default function DropBox({ onFileSelect }: DropBoxProps) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    // Accept all files for now - we'll filter on the server if needed
-    // accept: undefined means accept all file types
     maxFiles: 1,
     multiple: false,
     noClick: false,

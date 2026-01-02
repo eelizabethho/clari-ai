@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import AudioDropzone from "@/components/ui/DropBox";
 import Link from "next/link";
 
 export default function InterviewPage() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
@@ -42,6 +44,12 @@ export default function InterviewPage() {
 
       if (response.ok && data.success) {
         setUploadedUrl(data.url);
+        
+        // Redirect to transcript page after successful upload
+        // Lambda will process the file and save transcript to S3
+        // The transcript page will poll for it
+        const fileName = data.fileName || file.name;
+        router.push(`/interview/transcript?fileName=${encodeURIComponent(fileName)}`);
       } else {
         setError(data.error || 'Upload failed');
       }
