@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Clari AI Lambda Function - connects to existing S3 bucket
+
+Parameters:
+  ExistingBucketName:
+    Type: String
+    Description: Name of your existing S3 bucket
+    Default: clari-ai-bucket
+  
+  OpenAIApiKey:
+    Type: String
+    Description: OpenAI API Key for transcription
+    NoEcho: true
+    Default: ""
+
+Resources:
+  # IAM Role for Lambda
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub 'arn:aws:s3:::${ExistingBucketName}/*'
+        - PolicyName: TranscribeAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - transcribe:StartTranscriptionJob
+                  - transcribe:GetTranscriptionJob
+                  - transcribe:ListTranscriptionJobs
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: 
+                  - 'arn:aws:s3:::aws-transcribe-*/*'
+                  - !Sub 'arn:aws:s3:::aws-transcribe-${AWS::Region}-prod/*'
+                  - !Sub 'arn:aws:s3:::aws-transcribe-${AWS::Region}-*/*'
+
+  # Lambda Function
+  TranscribeLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: clari-transcribe-lambda
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 900
+      MemorySize: 1024
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            console.log('Placeholder Lambda - code will be updated via API');
+            return { statusCode: 200, body: JSON.stringify({ message: 'Placeholder' }) };
+          };
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref ExistingBucketName
+
+Outputs:
+  LambdaFunctionArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt TranscribeLambda.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaArn'
+  
+  LambdaFunctionName:
+    Description: Name of the Lambda function
+    Value: !Ref TranscribeLambda
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaName'
+
