@@ -13,10 +13,8 @@ export default function Home() {
       className="relative min-h-screen bg-cover bg-center flex items-center justify-center"
       style={{ backgroundImage: "url('/claribackground.png')" }}
     >
-      {/* overlay */}
       <div className="absolute inset-0 bg-white/50 backdrop-blur-sm" />
 
-      {/* content */}
       <div className="relative z-10 w-full max-w-3xl mx-auto text-center px-6">
         
         <BlurText

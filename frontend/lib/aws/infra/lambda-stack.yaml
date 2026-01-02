@@ -54,6 +54,17 @@ Resources:
                   - 'arn:aws:s3:::aws-transcribe-*/*'
                   - !Sub 'arn:aws:s3:::aws-transcribe-${AWS::Region}-prod/*'
                   - !Sub 'arn:aws:s3:::aws-transcribe-${AWS::Region}-*/*'
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource: !GetAtt TranscriptsTable.Arn
 
   # Lambda Function
   TranscribeLambda:
@@ -74,6 +85,26 @@ Resources:
       Environment:
         Variables:
           BUCKET_NAME: !Ref ExistingBucketName
+          TRANSCRIPTS_TABLE_NAME: !Ref TranscriptsTable
+
+  # DynamoDB Table for storing transcripts
+  TranscriptsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: clari-transcripts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: transcriptId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: transcriptId
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
 
 Outputs:
   LambdaFunctionArn:
@@ -87,4 +118,10 @@ Outputs:
     Value: !Ref TranscribeLambda
     Export:
       Name: !Sub '${AWS::StackName}-LambdaName'
+  
+  TranscriptsTableName:
+    Description: Name of the DynamoDB table for transcripts
+    Value: !Ref TranscriptsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-TranscriptsTable'
 
