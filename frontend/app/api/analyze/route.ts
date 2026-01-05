@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Prompt GPT to analyze interview performance and return structured feedback
+    // Analyze interview performance and return structured feedback
     const analysisPrompt = `You are an expert interview coach analyzing an interview transcript. Provide detailed feedback on the candidate's performance.
 
 Analyze the following transcript and provide feedback in JSON format with these categories:

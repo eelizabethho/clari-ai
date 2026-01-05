@@ -36,6 +36,7 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:PutObject
+                  - s3:HeadObject
                 Resource: !Sub 'arn:aws:s3:::${ExistingBucketName}/*'
         - PolicyName: TranscribeAccess
           PolicyDocument:

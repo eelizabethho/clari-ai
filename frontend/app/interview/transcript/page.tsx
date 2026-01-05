@@ -17,7 +17,7 @@ export default function TranscriptPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
-  // Send transcript to AI for performance analysis
+  // Send transcript for performance analysis
   const analyzeTranscript = async (transcriptText: string) => {
     setIsAnalyzing(true);
     try {
@@ -77,7 +77,7 @@ export default function TranscriptPage() {
           setSpeakers(data.speakers || 0);
           setIsLoading(false);
           clearInterval(pollInterval);
-          // Use raw transcript (without speaker labels) for AI analysis
+          // Use raw transcript (without speaker labels) for analysis
           const transcriptForAnalysis = data.rawTranscript || data.transcript;
           analyzeTranscript(transcriptForAnalysis);
         } else if (data.ready === false) {
@@ -328,7 +328,7 @@ export default function TranscriptPage() {
             {isAnalyzing && (
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-sm text-blue-700">AI is analyzing your performance...</p>
+                <p className="text-sm text-blue-700">Analyzing your performance...</p>
               </div>
             )}
 

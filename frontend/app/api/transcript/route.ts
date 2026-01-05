@@ -91,7 +91,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         success: true,
         transcript: formattedTranscript,
-        rawTranscript: transcriptData.transcript, // Keep original for AI analysis
+        rawTranscript: transcriptData.transcript, // Keep original for analysis
         speakers: transcriptData.speakers,
         items: transcriptData.items,
         fileName: transcriptData.fileName,
