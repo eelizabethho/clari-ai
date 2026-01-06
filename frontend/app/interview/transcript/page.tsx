@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function TranscriptPage() {
+function TranscriptContent() {
   const searchParams = useSearchParams();
   const fileName = searchParams.get("fileName");
   
@@ -413,6 +413,21 @@ export default function TranscriptPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function TranscriptPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50 py-8 pt-24">
+        <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading transcript...</p>
+        </div>
+      </main>
+    }>
+      <TranscriptContent />
+    </Suspense>
   );
 }
 

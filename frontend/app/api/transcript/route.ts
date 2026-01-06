@@ -96,7 +96,7 @@ export async function GET(request: Request) {
       try {
         const session = await getServerSession();
         if (session?.user) {
-          const userId = session.user.id || session.user.email;
+          const userId = (session.user as any).id || session.user.email;
           const tableName = process.env.TRANSCRIPTS_TABLE_NAME || "clari-transcripts";
           
           const queryResponse = await dynamoClient.send(new QueryCommand({

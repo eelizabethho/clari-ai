@@ -23,6 +23,9 @@ export default function Home() {
           delay={70}
           direction="top"
           className="text-6xl sm:text-8xl font-bold tracking-wide text-[#2271B1] mx-auto justify-center"
+          animationFrom={undefined}
+          animationTo={undefined}
+          onAnimationComplete={undefined}
         />
 
         <p className="mt-6 text-lg sm:text-xl text-slate-700 max-w-2xl mx-auto">

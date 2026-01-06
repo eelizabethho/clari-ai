@@ -22,6 +22,8 @@ export default function TranscriptHistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [newFileName, setNewFileName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -94,6 +96,51 @@ export default function TranscriptHistoryPage() {
       setError("Failed to delete transcript");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleRename = async (transcriptId: string, currentFileName: string) => {
+    const newName = prompt("Enter new name for this transcript:", currentFileName);
+    
+    if (!newName || newName.trim() === currentFileName || newName.trim().length === 0) {
+      return;
+    }
+
+    setRenamingId(transcriptId);
+    setNewFileName(newName.trim());
+    
+    try {
+      const response = await fetch("/api/transcripts", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcriptId: transcriptId,
+          newFileName: newName.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the transcript in local state
+        const updated = transcripts.map((t) =>
+          t.transcriptId === transcriptId
+            ? { ...t, fileName: newName.trim() }
+            : t
+        );
+        setTranscripts(updated);
+        setFilteredTranscripts(updated);
+      } else {
+        setError(data.error || "Failed to rename transcript");
+      }
+    } catch (err) {
+      console.error("Error renaming transcript:", err);
+      setError("Failed to rename transcript");
+    } finally {
+      setRenamingId(null);
+      setNewFileName("");
     }
   };
 
@@ -258,8 +305,30 @@ export default function TranscriptHistoryPage() {
                     View
                   </Link>
                   <button
+                    onClick={() => handleRename(transcript.transcriptId, transcript.fileName)}
+                    disabled={renamingId === transcript.transcriptId || deletingId === transcript.transcriptId}
+                    className="px-4 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    {renamingId === transcript.transcriptId ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Renaming...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Rename
+                      </>
+                    )}
+                  </button>
+                  <button
                     onClick={() => handleDelete(transcript.transcriptId)}
-                    disabled={deletingId === transcript.transcriptId}
+                    disabled={deletingId === transcript.transcriptId || renamingId === transcript.transcriptId}
                     className="px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   >
                     {deletingId === transcript.transcriptId ? (
