@@ -20,6 +20,7 @@ export default function TranscriptHistoryPage() {
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -44,6 +45,33 @@ export default function TranscriptHistoryPage() {
       setError("Failed to load transcripts");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (transcriptId: string) => {
+    if (!confirm("Are you sure you want to delete this transcript? This action cannot be undone.")) {
+      return;
+    }
+
+    setDeletingId(transcriptId);
+    try {
+      const response = await fetch(`/api/transcripts?transcriptId=${encodeURIComponent(transcriptId)}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove the transcript from the local state
+        setTranscripts(transcripts.filter((t) => t.transcriptId !== transcriptId));
+      } else {
+        setError(data.error || "Failed to delete transcript");
+      }
+    } catch (err) {
+      console.error("Error deleting transcript:", err);
+      setError("Failed to delete transcript");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -128,12 +156,21 @@ export default function TranscriptHistoryPage() {
                     {transcript.transcript.length > 200 ? "..." : ""}
                   </p>
                 </div>
-                <Link
-                  href={`/interview/transcript?fileName=${encodeURIComponent(transcript.fileName)}`}
-                  className="ml-4 px-4 py-2 bg-[#2271B1] text-white rounded-md hover:bg-[#1a5a8a] transition-colors text-sm"
-                >
-                  View Full
-                </Link>
+                <div className="ml-4 flex gap-2">
+                  <Link
+                    href={`/interview/transcript?fileName=${encodeURIComponent(transcript.fileName)}`}
+                    className="px-4 py-2 bg-[#2271B1] text-white rounded-md hover:bg-[#1a5a8a] transition-colors text-sm"
+                  >
+                    View Full
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(transcript.transcriptId)}
+                    disabled={deletingId === transcript.transcriptId}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingId === transcript.transcriptId ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
