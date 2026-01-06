@@ -91,35 +91,54 @@ export default function InterviewPage() {
         <AudioDropzone onFileSelect={handleFileSelect} />
 
         {file ? (
-          <div className="mt-4 p-4 bg-green-50 border-2 border-green-400 rounded-md">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-green-800">
-                File Ready to Upload
-              </p>
-              <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">
+          <div className="mt-4 p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-semibold text-green-800">
+                  File Ready
+                </p>
+              </div>
+              <span className="text-xs bg-green-200 text-green-800 px-3 py-1 rounded-full font-medium">
                 Ready
               </span>
             </div>
-            <p className="font-medium text-green-900">{file.name}</p>
-            <p className="text-xs text-green-700 mt-1">
-              Size: {(file.size / 1024).toFixed(2)} KB | Type: {file.type || 'audio'}
-            </p>
+            <p className="font-semibold text-gray-900 mb-2 truncate">{file.name}</p>
+            <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
+              <span className="flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+                {(file.size / (1024 * 1024)).toFixed(2)} MB
+              </span>
+              <span className="flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                {file.type || 'audio'}
+              </span>
+            </div>
 
-            <audio controls className="mt-3 w-full">
+            <audio controls className="mt-3 w-full rounded-md">
               <source src={URL.createObjectURL(file)} />
               Your browser does not support the audio element.
             </audio>
             
             <button
               onClick={() => setFile(null)}
-              className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+              className="mt-3 text-sm text-red-600 hover:text-red-800 font-medium flex items-center gap-1"
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
               Remove file
             </button>
           </div>
         ) : (
-          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md text-center">
-            <p className="text-sm text-gray-500">No file selected - Please select an audio file</p>
+          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+            <p className="text-sm text-gray-500">No file selected</p>
           </div>
         )}
 
@@ -167,17 +186,30 @@ export default function InterviewPage() {
           <button
             onClick={handleAnalyze}
             disabled={!file || isUploading}
-            className={`px-6 py-2 rounded-md font-medium transition-all ${
+            className={`px-6 py-3 rounded-md font-medium transition-all flex items-center gap-2 ${
               file && !isUploading
                 ? "bg-[#2271B1] text-white hover:bg-[#1a5a8a] cursor-pointer shadow-md hover:shadow-lg"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}
           >
-            {isUploading 
-              ? "Uploading..." 
-              : file 
-                ? `Analyze Recording (${file.name.substring(0, 20)}...)` 
-                : "Select a file first"}
+            {isUploading ? (
+              <>
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading...
+              </>
+            ) : file ? (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Analyze Recording
+              </>
+            ) : (
+              "Select a file first"
+            )}
           </button>
         </div>
       </div>
