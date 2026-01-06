@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/aws/s3Client";
+import { getServerSession } from "next-auth";
+import { dynamoClient } from "@/lib/dynamodb";
+import { QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 // Format AWS Transcribe items array into readable transcript with speaker labels
 // Converts spk_0, spk_1 to "Speaker 1", "Speaker 2", etc.
@@ -88,14 +91,49 @@ export async function GET(request: Request) {
         formattedTranscript = formatTranscriptWithSpeakers(transcriptData.items);
       }
       
+      // Try to get stored analysis from DynamoDB
+      let storedAnalysis = null;
+      try {
+        const session = await getServerSession();
+        if (session?.user) {
+          const userId = session.user.id || session.user.email;
+          const tableName = process.env.TRANSCRIPTS_TABLE_NAME || "clari-transcripts";
+          
+          const queryResponse = await dynamoClient.send(new QueryCommand({
+            TableName: tableName,
+            KeyConditionExpression: "userId = :userId",
+            FilterExpression: "fileName = :fileName",
+            ExpressionAttributeValues: {
+              ":userId": userId,
+              ":fileName": fileName,
+            },
+            ScanIndexForward: false,
+            Limit: 1,
+          }));
+
+          if (queryResponse.Items && queryResponse.Items.length > 0 && queryResponse.Items[0].analysis) {
+            storedAnalysis = queryResponse.Items[0].analysis;
+          }
+        }
+      } catch (dbError) {
+        // If we can't get analysis from DB, that's okay - we'll just not include it
+        console.error("Failed to fetch analysis from DynamoDB:", dbError);
+      }
+      
+      // Cache response for 5 minutes (transcripts don't change after creation)
       return NextResponse.json({
         success: true,
         transcript: formattedTranscript,
-        rawTranscript: transcriptData.transcript, // Keep original for analysis
+        rawTranscript: transcriptData.transcript,
         speakers: transcriptData.speakers,
         items: transcriptData.items,
         fileName: transcriptData.fileName,
         timestamp: transcriptData.timestamp,
+        analysis: storedAnalysis, // Include stored analysis if available
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
       });
     } catch (s3Error: any) {
       // File doesn't exist yet - Lambda is still processing

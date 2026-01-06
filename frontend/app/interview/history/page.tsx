@@ -18,9 +18,11 @@ export default function TranscriptHistoryPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
+  const [filteredTranscripts, setFilteredTranscripts] = useState<Transcript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -30,13 +32,31 @@ export default function TranscriptHistoryPage() {
     }
   }, [status, router]);
 
+  // Filter transcripts based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredTranscripts(transcripts);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = transcripts.filter(
+      (t) =>
+        t.fileName.toLowerCase().includes(query) ||
+        t.transcript.toLowerCase().includes(query)
+    );
+    setFilteredTranscripts(filtered);
+  }, [searchQuery, transcripts]);
+
   const fetchTranscripts = async () => {
     try {
       const response = await fetch("/api/transcripts");
       const data = await response.json();
 
       if (data.success) {
-        setTranscripts(data.transcripts || []);
+        const loadedTranscripts = data.transcripts || [];
+        setTranscripts(loadedTranscripts);
+        setFilteredTranscripts(loadedTranscripts);
       } else {
         setError(data.error || "Failed to load transcripts");
       }
@@ -63,7 +83,9 @@ export default function TranscriptHistoryPage() {
 
       if (data.success) {
         // Remove the transcript from the local state
-        setTranscripts(transcripts.filter((t) => t.transcriptId !== transcriptId));
+        const updated = transcripts.filter((t) => t.transcriptId !== transcriptId);
+        setTranscripts(updated);
+        setFilteredTranscripts(updated);
       } else {
         setError(data.error || "Failed to delete transcript");
       }
@@ -77,7 +99,7 @@ export default function TranscriptHistoryPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50">
+      <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50 pt-16">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your transcripts...</p>
@@ -91,27 +113,59 @@ export default function TranscriptHistoryPage() {
   }
 
   return (
-    <main className="min-h-screen px-6 bg-slate-50 py-8">
+    <main className="min-h-screen px-6 bg-slate-50 py-8 pt-24">
       <div className="w-full max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold text-black">
             My Transcripts
           </h1>
-          <div className="flex gap-4">
-            <Link
-              href="/interview"
-              className="px-4 py-2 bg-[#2271B1] text-white rounded-md hover:bg-[#1a5a8a] transition-colors"
+          <Link
+            href="/interview"
+            className="px-4 py-2 bg-[#2271B1] text-white rounded-md hover:bg-[#1a5a8a] transition-colors"
+          >
+            Upload New
+          </Link>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search transcripts by filename or content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-3 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2271B1] focus:border-transparent outline-none"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              Upload New
-            </Link>
-            {session?.user && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  {session.user.name || session.user.email}
-                </span>
-              </div>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             )}
           </div>
+          {searchQuery && (
+            <p className="mt-2 text-sm text-gray-500">
+              Found {filteredTranscripts.length} transcript{filteredTranscripts.length !== 1 ? 's' : ''}
+            </p>
+          )}
         </div>
 
         {error && (
@@ -120,7 +174,7 @@ export default function TranscriptHistoryPage() {
           </div>
         )}
 
-        {transcripts.length === 0 && !isLoading && (
+        {filteredTranscripts.length === 0 && transcripts.length === 0 && !isLoading && (
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -139,8 +193,20 @@ export default function TranscriptHistoryPage() {
           </div>
         )}
 
+        {filteredTranscripts.length === 0 && transcripts.length > 0 && (
+          <div className="bg-white rounded-lg p-8 text-center border border-gray-200">
+            <p className="text-gray-600">No transcripts found matching your search.</p>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="mt-4 text-[#2271B1] hover:underline text-sm"
+            >
+              Clear search
+            </button>
+          </div>
+        )}
+
         <div className="grid gap-4">
-          {transcripts.map((transcript) => (
+          {filteredTranscripts.map((transcript) => (
             <div
               key={transcript.transcriptId}
               className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-200 border border-gray-100"

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { getServerSession } from "next-auth";
+import { dynamoClient } from "@/lib/dynamodb";
+import { UpdateCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 let openai: OpenAI | null = null;
 
@@ -22,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { transcript } = body;
+    const { transcript, fileName } = body;
 
     if (!transcript) {
       return NextResponse.json(
@@ -113,6 +116,48 @@ ${transcript}`;
         analysis = JSON.parse(jsonMatch[0]);
       } else {
         throw new Error("Failed to parse analysis response");
+      }
+    }
+
+    // Save analysis to DynamoDB if fileName is provided
+    if (fileName) {
+      try {
+        const session = await getServerSession();
+        if (session?.user) {
+          const userId = session.user.id || session.user.email;
+          const tableName = process.env.TRANSCRIPTS_TABLE_NAME || "clari-transcripts";
+          
+          // Find the transcript by fileName and update it with analysis
+          const queryResponse = await dynamoClient.send(new QueryCommand({
+            TableName: tableName,
+            KeyConditionExpression: "userId = :userId",
+            FilterExpression: "fileName = :fileName",
+            ExpressionAttributeValues: {
+              ":userId": userId,
+              ":fileName": fileName,
+            },
+            ScanIndexForward: false,
+            Limit: 1,
+          }));
+
+          if (queryResponse.Items && queryResponse.Items.length > 0) {
+            const transcriptItem = queryResponse.Items[0];
+            await dynamoClient.send(new UpdateCommand({
+              TableName: tableName,
+              Key: {
+                userId: userId,
+                transcriptId: transcriptItem.transcriptId,
+              },
+              UpdateExpression: "SET analysis = :analysis",
+              ExpressionAttributeValues: {
+                ":analysis": analysis,
+              },
+            }));
+          }
+        }
+      } catch (dbError) {
+        // Don't fail the request if saving to DB fails, just log it
+        console.error("Failed to save analysis to DynamoDB:", dbError);
       }
     }
 

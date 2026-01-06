@@ -23,6 +23,11 @@ export default function DropBox({ onFileSelect }: DropBoxProps) {
     multiple: false,
     noClick: false,
     noKeyboard: false,
+    maxSize: 2 * 1024 * 1024 * 1024, // 2GB max (AWS Transcribe limit)
+    accept: {
+      'audio/*': ['.mp3', '.wav', '.flac', '.ogg', '.amr', '.m4a'],
+      'video/*': ['.mp4', '.mov', '.webm', '.mpg', '.mpeg'],
+    },
   });
 
   const rootProps = getRootProps();

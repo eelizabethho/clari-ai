@@ -38,9 +38,14 @@ export async function GET() {
 
     const response = await dynamoClient.send(command);
     
+    // Cache response for 1 minute (new uploads appear quickly)
     return NextResponse.json({
       success: true,
       transcripts: response.Items || [],
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=120',
+      },
     });
   } catch (error) {
     console.error("Error fetching transcripts:", error);

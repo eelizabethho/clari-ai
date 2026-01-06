@@ -25,6 +25,15 @@ export default function InterviewPage() {
     if (!selectedFile || !(selectedFile instanceof File)) {
       return;
     }
+
+    // Validate file size (2GB max for AWS Transcribe)
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
+    if (selectedFile.size > maxSize) {
+      setError(`File is too large. Maximum size is 2GB. Your file is ${(selectedFile.size / (1024 * 1024 * 1024)).toFixed(2)}GB.`);
+      setFile(null);
+      return;
+    }
+
     setFile(selectedFile);
     setError(null);
     setUploadedUrl(null);
@@ -69,7 +78,7 @@ export default function InterviewPage() {
 
   if (status === "loading" || status === "unauthenticated") {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50">
+      <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50 pt-16">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">
@@ -81,7 +90,7 @@ export default function InterviewPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50">
+    <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50 pt-16">
       <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-8">
 
         <h1 className="text-2xl font-semibold text-center mb-4 text-black">

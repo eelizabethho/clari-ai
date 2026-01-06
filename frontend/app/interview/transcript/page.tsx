@@ -9,6 +9,7 @@ export default function TranscriptPage() {
   const fileName = searchParams.get("fileName");
   
   const [transcript, setTranscript] = useState<string | null>(null);
+  const [rawTranscript, setRawTranscript] = useState<string | null>(null);
   const [speakers, setSpeakers] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +19,7 @@ export default function TranscriptPage() {
   const [showAnalysis, setShowAnalysis] = useState(false);
 
   // Send transcript for performance analysis
-  const analyzeTranscript = async (transcriptText: string) => {
+  const analyzeTranscript = async (transcriptText: string, file?: string | null) => {
     setIsAnalyzing(true);
     try {
       const response = await fetch('/api/analyze', {
@@ -26,7 +27,7 @@ export default function TranscriptPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ transcript: transcriptText }),
+        body: JSON.stringify({ transcript: transcriptText, fileName: file || fileName }),
       });
 
       const data = await response.json();
@@ -74,12 +75,20 @@ export default function TranscriptPage() {
 
         if (data.success && data.transcript) {
           setTranscript(data.transcript);
+          setRawTranscript(data.rawTranscript || data.transcript);
           setSpeakers(data.speakers || 0);
           setIsLoading(false);
           clearInterval(pollInterval);
-          // Use raw transcript (without speaker labels) for analysis
-          const transcriptForAnalysis = data.rawTranscript || data.transcript;
-          analyzeTranscript(transcriptForAnalysis);
+          
+          // If analysis is already stored, use it; otherwise run new analysis
+          if (data.analysis) {
+            setAnalysis(data.analysis);
+            setShowAnalysis(true);
+          } else {
+            // Use raw transcript (without speaker labels) for analysis
+            const transcriptForAnalysis = data.rawTranscript || data.transcript;
+            analyzeTranscript(transcriptForAnalysis, fileName);
+          }
         } else if (data.ready === false) {
           // Still processing, keep polling
           setPollCount((prev) => prev + 1);
@@ -106,11 +115,19 @@ export default function TranscriptPage() {
       .then((data) => {
         if (data.success && data.transcript) {
           setTranscript(data.transcript);
+          setRawTranscript(data.rawTranscript || data.transcript);
           setSpeakers(data.speakers || 0);
           setIsLoading(false);
           clearInterval(pollInterval);
-          const transcriptForAnalysis = data.rawTranscript || data.transcript;
-          analyzeTranscript(transcriptForAnalysis);
+          
+          // If analysis is already stored, use it; otherwise run new analysis
+          if (data.analysis) {
+            setAnalysis(data.analysis);
+            setShowAnalysis(true);
+          } else {
+            const transcriptForAnalysis = data.rawTranscript || data.transcript;
+            analyzeTranscript(transcriptForAnalysis, fileName);
+          }
         }
       })
       .catch((err) => {
@@ -121,7 +138,7 @@ export default function TranscriptPage() {
   }, [fileName, pollCount]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50 py-8">
+    <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50 py-8 pt-24">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold text-black">
@@ -196,7 +213,7 @@ export default function TranscriptPage() {
                 </button>
                 {!showAnalysis && (
                   <button
-                    onClick={() => analyzeTranscript(transcript)}
+                    onClick={() => analyzeTranscript(rawTranscript || transcript, fileName)}
                     disabled={isAnalyzing}
                     className="text-xs bg-blue-200 text-blue-800 px-3 py-1 rounded hover:bg-blue-300 disabled:opacity-50"
                   >

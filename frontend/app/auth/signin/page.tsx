@@ -34,7 +34,7 @@ export default function SignInPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50">
+    <main className="min-h-screen flex items-center justify-center px-6 bg-slate-50 pt-16">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
         <h1 className="text-2xl font-semibold text-center mb-6 text-black">
           Sign in to Clari AI
